@@ -23,6 +23,9 @@
 # misc
 .DS_Store
 *.pem
+.trace-dev.pid
+.trace-dev.out.log
+.trace-dev.err.log
 
 # debug
 npm-debug.log*

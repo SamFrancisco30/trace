@@ -37,7 +37,18 @@ For day-to-day development, use the PowerShell helper:
 .\scripts\start-dev.ps1
 ```
 
-It starts PostgreSQL, generates the Prisma client, applies migrations, and then launches the Next.js dev server.
+It starts PostgreSQL, generates the Prisma client, applies migrations, and then launches the Next.js dev server in the background.
+Stdout and stderr are written to `.trace-dev.out.log` and `.trace-dev.err.log` in the repo root.
+
+### Stopping local dev
+
+Use the matching stop script when you want to shut everything down:
+
+```powershell
+.\scripts\stop-dev.ps1
+```
+
+It stops the background dev server process and brings down the local PostgreSQL container without deleting the data volume.
 
 ### Timeline editing
 
