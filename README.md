@@ -16,15 +16,33 @@ Trace is a minimal AI-assisted trading journal. It is not a trading platform and
 
 Use Node.js 20.19 or newer.
 
+### First-time setup
+
 ```bash
 npm install
 copy .env.example .env
 docker compose up -d
+npm run db:generate
 npm run db:migrate
 npm run dev
 ```
 
 Open http://localhost:3000.
+
+### Daily startup
+
+For day-to-day development, use the PowerShell helper:
+
+```powershell
+.\scripts\start-dev.ps1
+```
+
+It starts PostgreSQL, generates the Prisma client, applies migrations, and then launches the Next.js dev server.
+
+### Timeline editing
+
+Entries in the timeline can now be edited in place or moved to trash from the entry controls.
+The portfolio state is recomputed from the remaining active entries, so changing or deleting an entry keeps the current holdings view consistent.
 
 ## Environment
 
@@ -36,7 +54,7 @@ OPENAI_API_KEY=""
 OPENAI_MODEL="gpt-4.1-mini"
 ```
 
-If `OPENAI_API_KEY` is missing, entries still save, but parsed metadata defaults to `UNKNOWN` and portfolio positions will not update.
+If `OPENAI_API_KEY` is missing, entries still save, but parsed metadata defaults to `UNKNOWN` and portfolio updates will not be derived from AI parsing.
 
 ## Database
 
@@ -44,6 +62,7 @@ Local Postgres runs from `docker-compose.yml`.
 
 ```bash
 docker compose up -d
+npm run db:generate
 npm run db:migrate
 npm run db:studio
 ```

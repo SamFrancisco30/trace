@@ -14,14 +14,24 @@ export type ParsedTrade = {
 export function applyTradeToPosition(
   current: PositionState | null,
   trade: ParsedTrade,
+  ticker?: string,
 ): PositionState {
   const currentShares = current?.shares ?? 0;
   const currentAvgCost = current?.avgCost ?? null;
 
   if (trade.action === "SELL") {
+    if (trade.quantity > currentShares) {
+      const label = ticker ? ` of ${ticker}` : "";
+      throw new Error(
+        `Cannot sell ${trade.quantity} shares${label}: only ${currentShares} held`,
+      );
+    }
+
+    const nextShares = currentShares - trade.quantity;
+
     return {
-      shares: Math.max(0, currentShares - trade.quantity),
-      avgCost: currentAvgCost,
+      shares: nextShares,
+      avgCost: nextShares === 0 ? null : currentAvgCost,
     };
   }
 

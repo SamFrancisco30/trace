@@ -22,7 +22,8 @@ export function PortfolioSummary({
 
       {positions.length === 0 ? (
         <p className="text-sm leading-6 text-zinc-500">
-          Parsed buy and sell entries will update positions here.
+          Parsed buy, sell, or holdings snapshot entries will update positions
+          here.
         </p>
       ) : (
         <div className="overflow-x-auto">

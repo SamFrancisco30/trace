@@ -1,3 +1,5 @@
+import { TimelineEntryActions } from "@/components/timeline-entry-actions";
+
 type TimelineEntry = {
   id: string;
   createdAt: Date;
@@ -44,6 +46,7 @@ export function Timeline({ entries }: { entries: TimelineEntry[] }) {
                   {entry.rawText}
                 </p>
                 <Metadata metadata={metadata} />
+                <TimelineEntryActions entryId={entry.id} rawText={entry.rawText} />
               </li>
             );
           })}

@@ -12,6 +12,7 @@ model Event {
   createdAt  DateTime @default(now()) @map("created_at")
   rawText    String   @map("raw_text")
   parsedData Json     @map("parsed_data")
+  deletedAt  DateTime? @map("deleted_at")
 
   @@map("events")
 }

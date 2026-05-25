@@ -8,7 +8,8 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const [events, positions] = await Promise.all([
     prisma.event.findMany({
-      orderBy: { createdAt: "asc" },
+      where: { deletedAt: null },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     }),
     prisma.portfolioPosition.findMany({
       orderBy: { ticker: "asc" },
