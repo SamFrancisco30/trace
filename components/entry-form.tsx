@@ -33,8 +33,9 @@ export function EntryForm() {
       <Textarea
         name="rawText"
         required
-        placeholder="Bought 20 shares of NVDA at 187 because AI demand still looks strong"
+        placeholder="TSLA 可能要回调了 / 今天学到不要追高 / AI 板块感觉开始过热"
         aria-label="Journal entry"
+        className="resize-y"
       />
       <div className="flex items-center justify-between gap-3">
         <p

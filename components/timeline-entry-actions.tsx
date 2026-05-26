@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import {
@@ -24,6 +24,34 @@ export function TimelineEntryActions({
   rawText: string;
 }) {
   const [isEditing, setIsEditing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+      }
+    }
+
+    window.addEventListener("mousedown", handlePointerDown);
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [menuOpen]);
 
   return (
     <div className="mt-4 flex flex-col gap-3">
@@ -35,27 +63,54 @@ export function TimelineEntryActions({
           onSuccess={() => setIsEditing(false)}
         />
       ) : (
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="h-8 px-3 text-xs"
-            onClick={() => setIsEditing(true)}
-          >
-            Edit
-          </Button>
+        <div className="flex justify-end">
+          <div className="relative" ref={menuRef}>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-8 w-8 px-0 text-base text-zinc-600"
+              aria-label="Entry actions"
+              aria-expanded={menuOpen}
+              aria-haspopup="menu"
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              ⋯
+            </Button>
 
-          <form
-            action={deleteJournalEntry}
-            onSubmit={(event) => {
-              if (!window.confirm("Move this entry to trash?")) {
-                event.preventDefault();
-              }
-            }}
-          >
-            <input type="hidden" name="eventId" value={entryId} />
-            <DeleteButton />
-          </form>
+            {menuOpen ? (
+              <div
+                className="absolute right-0 top-10 z-10 min-w-32 rounded-md border border-zinc-200 bg-white p-1 shadow-sm"
+                role="menu"
+                aria-label="Entry actions"
+              >
+                <button
+                  type="button"
+                  className="flex w-full items-center rounded px-3 py-2 text-left text-sm text-zinc-700 transition-colors hover:bg-zinc-100"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setIsEditing(true);
+                  }}
+                >
+                  Edit
+                </button>
+
+                <form
+                  action={deleteJournalEntry}
+                  onSubmit={(event) => {
+                    if (!window.confirm("Move this entry to trash?")) {
+                      event.preventDefault();
+                      return;
+                    }
+                    setMenuOpen(false);
+                  }}
+                >
+                  <input type="hidden" name="eventId" value={entryId} />
+                  <DeleteMenuButton />
+                </form>
+              </div>
+            ) : null}
+          </div>
         </div>
       )}
     </div>
@@ -120,17 +175,17 @@ function SaveButton() {
   );
 }
 
-function DeleteButton() {
+function DeleteMenuButton() {
   const { pending } = useFormStatus();
 
   return (
-    <Button
+    <button
       type="submit"
-      variant="outline"
-      className="h-8 px-3 text-xs text-zinc-600"
+      className="flex w-full items-center rounded px-3 py-2 text-left text-sm text-zinc-700 transition-colors hover:bg-zinc-100 disabled:pointer-events-none disabled:opacity-50"
+      role="menuitem"
       disabled={pending}
     >
       {pending ? "Deleting" : "Delete"}
-    </Button>
+    </button>
   );
 }

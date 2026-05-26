@@ -12,7 +12,6 @@ type ParsedMetadata = {
   action?: string;
   quantity?: number | null;
   price?: number | null;
-  sentiment?: string;
   tags?: string[];
 };
 
@@ -33,12 +32,12 @@ export function Timeline({ entries }: { entries: TimelineEntry[] }) {
           Your first saved thought will appear here.
         </p>
       ) : (
-        <ol className="space-y-6">
+        <ol className="divide-y divide-zinc-200">
           {entries.map((entry) => {
             const metadata = toMetadata(entry.parsedData);
 
             return (
-              <li key={entry.id} className="border-b border-zinc-100 pb-6">
+              <li key={entry.id} className="px-4 py-5 sm:px-5 sm:py-6">
                 <time className="text-xs uppercase tracking-wide text-zinc-500">
                   {formatDate(entry.createdAt)}
                 </time>
@@ -57,18 +56,7 @@ export function Timeline({ entries }: { entries: TimelineEntry[] }) {
 }
 
 function Metadata({ metadata }: { metadata: ParsedMetadata }) {
-  const items = [
-    metadata.action && metadata.action !== "UNKNOWN"
-      ? metadata.action
-      : null,
-    metadata.tickers?.length ? metadata.tickers.join(", ") : null,
-    metadata.quantity != null ? `${metadata.quantity} shares` : null,
-    metadata.price != null ? `@ ${metadata.price}` : null,
-    metadata.sentiment && metadata.sentiment !== "UNKNOWN"
-      ? metadata.sentiment.toLowerCase()
-      : null,
-    ...(metadata.tags ?? []),
-  ].filter(Boolean);
+  const items = buildDisplayItems(metadata);
 
   if (items.length === 0) {
     return null;
@@ -86,6 +74,66 @@ function Metadata({ metadata }: { metadata: ParsedMetadata }) {
       ))}
     </div>
   );
+}
+
+function buildDisplayItems(metadata: ParsedMetadata) {
+  const tags = metadata.tags ?? [];
+  const tickers = metadata.tickers?.filter(Boolean) ?? [];
+  const action = metadata.action ?? "";
+
+  const isPrediction = tags.includes("prediction") || action === "WATCH";
+  const isReflection = tags.includes("reflection") || action === "NOTE";
+  const isTrade = action === "BUY" || action === "SELL";
+
+  if (isTrade) {
+    return [action, tickers[0] ?? null].filter(Boolean) as string[];
+  }
+
+  if (isPrediction) {
+    return [
+      "Prediction",
+      tickers[0] ?? null,
+      humanizeDirection(tags),
+      humanizeReminder(tags),
+    ].filter(Boolean) as string[];
+  }
+
+  if (isReflection) {
+    return ["Reflection", tickers[0] ?? null].filter(Boolean) as string[];
+  }
+
+  return tickers.slice(0, 1);
+}
+
+function humanizeDirection(tags: string[]) {
+  const directionTag = tags.find((tag) => tag.startsWith("direction:"));
+  const direction = directionTag?.split(":")[1];
+
+  switch (direction) {
+    case "breakout":
+      return "Breakout";
+    case "pullback":
+      return "Pullback";
+    case "up":
+      return "Up";
+    case "down":
+      return "Down";
+    case "range":
+      return "Range";
+    default:
+      return null;
+  }
+}
+
+function humanizeReminder(tags: string[]) {
+  const reminderTag = tags.find((tag) => tag.startsWith("reminder:"));
+  const value = reminderTag?.split(":")[1];
+
+  if (!value) {
+    return null;
+  }
+
+  return `Review in ${value}`;
 }
 
 function toMetadata(value: unknown): ParsedMetadata {

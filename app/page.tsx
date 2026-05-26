@@ -1,4 +1,4 @@
-import { EntryForm } from "@/components/entry-form";
+import { CaptureComposer } from "@/components/capture-composer";
 import { PortfolioSummary } from "@/components/portfolio-summary";
 import { Timeline } from "@/components/timeline";
 import { prisma } from "@/lib/db";
@@ -16,6 +16,12 @@ export default async function Home() {
     }),
   ]);
 
+  const normalizedPositions = positions.map((position) => ({
+    ticker: position.ticker,
+    shares: position.shares.toNumber(),
+    avgCost: position.avgCost?.toNumber() ?? null,
+  }));
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-12 px-5 py-8 sm:px-8 sm:py-12">
       <header className="space-y-2">
@@ -25,17 +31,11 @@ export default async function Home() {
         </h1>
       </header>
 
-      <EntryForm />
-
-      <PortfolioSummary
-        positions={positions.map((position) => ({
-          ticker: position.ticker,
-          shares: position.shares.toNumber(),
-          avgCost: position.avgCost?.toNumber() ?? null,
-        }))}
-      />
+      <CaptureComposer positions={normalizedPositions} />
 
       <Timeline entries={events} />
+
+      <PortfolioSummary positions={normalizedPositions} />
     </main>
   );
 }
