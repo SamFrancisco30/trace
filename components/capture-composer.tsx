@@ -18,6 +18,9 @@ import {
   type EntryKind,
   type InferredEntry,
 } from "@/lib/journal-actions";
+import { getRelatedEntriesForDraft } from "@/lib/related-entry-actions";
+import type { RelatedEntrySuggestion } from "@/lib/related-entries";
+import { RelatedEntrySuggestions } from "@/components/related-entry-suggestions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -97,6 +100,8 @@ function UnifiedCaptureForm() {
   const [savingKind, setSavingKind] = useState<EntryKind>("reflection");
   const [manualOverride, setManualOverride] = useState(false);
   const [formResetKey, setFormResetKey] = useState(0);
+  const [relatedSuggestions, setRelatedSuggestions] = useState<RelatedEntrySuggestion[]>([]);
+  const [isLoadingRelated, setIsLoadingRelated] = useState(false);
 
   const [state, formAction] = useActionState(
     async (_previousState: ComposerState, formData: FormData) => {
@@ -124,8 +129,11 @@ function UnifiedCaptureForm() {
           setPredictionDirection,
           setPredictionReminderDays,
           setLastSuggestedKind,
+          setSavingKind,
           setManualOverride,
           setFormResetKey,
+          setRelatedSuggestions,
+          setIsLoadingRelated,
         });
       }
 
@@ -136,14 +144,24 @@ function UnifiedCaptureForm() {
 
   useEffect(() => {
     if (!rawText.trim()) {
+      setRelatedSuggestions([]);
+      setIsLoadingRelated(false);
       return;
     }
 
+    let cancelled = false;
+
     const timeout = window.setTimeout(async () => {
       const inferred = await inferUnifiedEntry(rawText);
+
+      if (cancelled) {
+        return;
+      }
+
       setLastSuggestedKind(inferred.entryKind);
 
       if (!manualOverride) {
+        setSavingKind(inferred.entryKind);
         hydrateFromInference(inferred, {
           setEntryKind,
           setTradeAction,
@@ -154,10 +172,53 @@ function UnifiedCaptureForm() {
           setPredictionReminderDays,
         });
       }
+
+      const resolvedEntryKind = manualOverride ? entryKind : inferred.entryKind;
+      const resolvedTicker = (manualOverride ? ticker : inferred.ticker ?? ticker)
+        .trim()
+        .toUpperCase();
+      const resolvedPredictionDirection = manualOverride
+        ? predictionDirection || null
+        : inferred.predictionDirection;
+      const hasSignal =
+        rawText.trim().length >= 12 &&
+        (resolvedTicker.length > 0 || resolvedEntryKind !== "trade");
+
+      if (!hasSignal) {
+        setRelatedSuggestions([]);
+        setIsLoadingRelated(false);
+        return;
+      }
+
+      setIsLoadingRelated(true);
+
+      try {
+        const suggestions = await getRelatedEntriesForDraft({
+          rawText,
+          entryKind: resolvedEntryKind,
+          ticker: resolvedTicker || null,
+          predictionDirection: resolvedPredictionDirection,
+        });
+
+        if (!cancelled) {
+          setRelatedSuggestions(suggestions);
+        }
+      } catch {
+        if (!cancelled) {
+          setRelatedSuggestions([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingRelated(false);
+        }
+      }
     }, 450);
 
-    return () => window.clearTimeout(timeout);
-  }, [manualOverride, rawText]);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [entryKind, manualOverride, predictionDirection, rawText, ticker]);
 
   const helperText =
     state.message ||
@@ -355,6 +416,11 @@ function UnifiedCaptureForm() {
           )}
         </div>
       ) : null}
+
+      <RelatedEntrySuggestions
+        loading={isLoadingRelated}
+        suggestions={relatedSuggestions}
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="min-h-5 text-sm text-zinc-500" aria-live="polite">
@@ -642,8 +708,11 @@ function resetCaptureForm(setters: {
   setPredictionDirection: Dispatch<SetStateAction<string>>;
   setPredictionReminderDays: Dispatch<SetStateAction<string>>;
   setLastSuggestedKind: Dispatch<SetStateAction<EntryKind | null>>;
+  setSavingKind: Dispatch<SetStateAction<EntryKind>>;
   setManualOverride: Dispatch<SetStateAction<boolean>>;
   setFormResetKey: Dispatch<SetStateAction<number>>;
+  setRelatedSuggestions: Dispatch<SetStateAction<RelatedEntrySuggestion[]>>;
+  setIsLoadingRelated: Dispatch<SetStateAction<boolean>>;
 }) {
   setters.setRawText("");
   setters.setEntryKind("reflection");
@@ -654,7 +723,10 @@ function resetCaptureForm(setters: {
   setters.setPredictionDirection("");
   setters.setPredictionReminderDays("0");
   setters.setLastSuggestedKind(null);
+  setters.setSavingKind("reflection");
   setters.setManualOverride(false);
+  setters.setRelatedSuggestions([]);
+  setters.setIsLoadingRelated(false);
   setters.setFormResetKey((current) => current + 1);
 }
 
