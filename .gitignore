@@ -26,6 +26,7 @@
 .trace-dev.pid
 .trace-dev.out.log
 .trace-dev.err.log
+.worktrees/
 
 # debug
 npm-debug.log*
