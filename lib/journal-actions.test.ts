@@ -13,6 +13,7 @@ vi.mock("@/lib/openai");
 import { parseJournalEntry } from "@/lib/openai";
 import {
   createJournalEntry,
+  createTradeEntry,
   updateJournalEntry,
   deleteJournalEntry,
 } from "./journal-actions";
@@ -54,7 +55,7 @@ function makeFormData(entries: Record<string, string>): FormData {
   return fd;
 }
 
-const IDLE_STATE = { message: "", status: "idle" as const };
+const IDLE_STATE = { message: "", status: "idle" as const, inferred: null };
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -82,18 +83,15 @@ describe("journal-actions", () => {
   describe("updateJournalEntry", () => {
     it("updates parsedData and recalculates portfolio after editing ticker and quantity", async () => {
       // --- Arrange: create a BUY entry (NVDA 20 @ 187)
-      mockedParse.mockResolvedValueOnce(
-        makeParsedEntry({
-          action: "BUY",
-          tickers: ["NVDA"],
-          quantity: 20,
-          price: 187,
-        }),
-      );
-
-      const createResult = await createJournalEntry(
+      const createResult = await createTradeEntry(
         IDLE_STATE,
-        makeFormData({ rawText: "BUY 20 NVDA @ 187" }),
+        makeFormData({
+          tradeAction: "BUY",
+          ticker: "NVDA",
+          quantity: "20",
+          price: "187",
+          rawText: "BUY 20 NVDA @ 187",
+        }),
       );
       expect(createResult.status).toBe("success");
 
@@ -150,18 +148,15 @@ describe("journal-actions", () => {
 
     it("preserves the edited rawText in the database entry", async () => {
       // --- Arrange
-      mockedParse.mockResolvedValueOnce(
-        makeParsedEntry({
-          action: "BUY",
-          tickers: ["NVDA"],
-          quantity: 10,
-          price: 100,
-        }),
-      );
-
-      await createJournalEntry(
+      await createTradeEntry(
         IDLE_STATE,
-        makeFormData({ rawText: "BUY 10 NVDA @ 100" }),
+        makeFormData({
+          tradeAction: "BUY",
+          ticker: "NVDA",
+          quantity: "10",
+          price: "100",
+          rawText: "BUY 10 NVDA @ 100",
+        }),
       );
 
       const event = await prisma.event.findFirstOrThrow({
@@ -258,18 +253,15 @@ describe("journal-actions", () => {
     it("recalculates portfolio correctly after deleting a BUY entry", async () => {
       // --- Arrange: no positions initially
 
-      mockedParse.mockResolvedValueOnce(
-        makeParsedEntry({
-          action: "BUY",
-          tickers: ["NVDA"],
-          quantity: 20,
-          price: 187,
-        }),
-      );
-
-      await createJournalEntry(
+      await createTradeEntry(
         IDLE_STATE,
-        makeFormData({ rawText: "BUY 20 NVDA @ 187" }),
+        makeFormData({
+          tradeAction: "BUY",
+          ticker: "NVDA",
+          quantity: "20",
+          price: "187",
+          rawText: "BUY 20 NVDA @ 187",
+        }),
       );
 
       // Confirm NVDA is in portfolio
