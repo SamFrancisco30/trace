@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 const initialState: EntryFormState = {
   message: "",
   status: "idle",
+  inferred: null,
 };
 
 export function TimelineEntryActions({

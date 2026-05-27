@@ -30,6 +30,7 @@ type TradeWorkbenchProps = {
 const initialState: EntryFormState = {
   message: "",
   status: "idle",
+  inferred: null,
 };
 
 type TradeMode = "trade" | "holdings";
