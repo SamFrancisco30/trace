@@ -55,6 +55,10 @@ It stops the background dev server process and brings down the local PostgreSQL 
 Entries in the timeline can now be edited in place or moved to trash from the entry controls.
 The portfolio state is recomputed from the remaining active entries, so changing or deleting an entry keeps the current holdings view consistent.
 
+### Contextual resurfacing
+
+While typing a new journal entry, Trace can surface a few related past entries based on ticker, entry kind, and lightweight prediction-direction heuristics. This is an in-composer recall feature to help old notes become useful at the moment of capture, not a scheduled reminder system.
+
 ## Environment
 
 `.env.example` includes:

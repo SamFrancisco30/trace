@@ -144,8 +144,6 @@ function UnifiedCaptureForm() {
 
   useEffect(() => {
     if (!rawText.trim()) {
-      setRelatedSuggestions([]);
-      setIsLoadingRelated(false);
       return;
     }
 
@@ -238,7 +236,15 @@ function UnifiedCaptureForm() {
           name="rawText"
           required
           value={rawText}
-          onChange={(event) => setRawText(event.target.value)}
+          onChange={(event) => {
+            const nextValue = event.target.value;
+            setRawText(nextValue);
+
+            if (!nextValue.trim()) {
+              setRelatedSuggestions([]);
+              setIsLoadingRelated(false);
+            }
+          }}
           placeholder="Bought 20 shares of NVDA at 187 because AI demand still looks strong / TSLA may pull back / Today I learned not to chase breakouts"
           aria-label="Journal entry"
           className="min-h-32 resize-y bg-white"
